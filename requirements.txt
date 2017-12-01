@@ -1,0 +1,6 @@
+toms-util
+#Pycairo
+Pillow
+gi
+
+# GTK+3 via https://sourceforge.net/projects/pygobjectwin32/files/
