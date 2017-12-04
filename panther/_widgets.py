@@ -79,7 +79,13 @@ class _PantherApp(App):
     def on_start(self):
         panther.events.execute("load")
 
+    def on_resize(self, window, width, height):
+        # TODO: maybe modify the panther.conf here too?
+        panther.events.trigger('resize', window, width, height)
+
     def build(self):
+        Window.bind(on_resize=self.on_resize)
+
         self.title = panther.conf.title
 
         return panther.canvas

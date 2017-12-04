@@ -59,6 +59,10 @@ def draw():
     graphics.image(0, 0, 83, 75, "examples\\smiley.png")
 
 
+@panther.events.on('resize')
+def on_resize(window, width, height):
+    print(f"resized to: {width}x{height}")
+
 #panther.conf.height = 500
 #panther.conf.width = 500
 #panther.conf.title = "hi there"

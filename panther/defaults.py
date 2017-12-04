@@ -10,7 +10,7 @@ def default_event_parse(dt):
             exit(0)  # quit
 
         event.auto_handle()
-        print(f"Handled event: {event}")
+        #print(f"Handled event: {event}")
 
 
 def default_run():

@@ -98,7 +98,7 @@ def image(x, y, height, width, src):
     :return: None
     """
     im = CoreImage(src)
-    print(im.texture)
+    #print(im.texture)
 
     _draw_graphic(Rectangle(
         texture=im.texture,
@@ -112,7 +112,7 @@ def tiling_image(x, y, width, height, src):
     Color(.4, .4, .4, 1)
     texture = CoreImage(src).texture
     texture.wrap = 'repeat'
-    print(f"width: {texture.width}, height: {texture.height}")
+    #print(f"width: {texture.width}, height: {texture.height}")
 
     nx = float(width) / texture.width
     ny = float(height) / texture.height

@@ -38,11 +38,14 @@ class EventManager:
         # touch
         touchdown=None,  # executes when a touch or click event occurs
         touchup=None,  # executes when a touch or click is released
-        touchdrag=None,
+        touchdrag=None,  # executes when a drag occurs
 
         # keyboard
         keydown=None,
-        keyup=None
+        keyup=None,
+
+        # window
+        resize=None
     )
 
     def __init__(self):
