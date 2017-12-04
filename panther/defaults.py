@@ -1,13 +1,29 @@
 import time
-import panther
+
+
+def default_event_parse(dt):
+    import panther
+    for event in panther.events:
+        if event.name == "quit":
+            print("quitting...")
+            event.auto_handle()  # execute the subscriber who wants to clean up their code before we exit
+            exit(0)  # quit
+
+        event.auto_handle()
+        print(f"Handled event: {event}")
 
 
 def default_run():
     """
+    DEPRECATED!! - using kivy built-ins already
     The default run function
     :return: None
     """
-    panther.events.trigger_event('load')
+    import panther
+
+    print("PANTHER: default run executing...")
+
+    panther.events.execute('load')
 
     dt = 0
 
@@ -15,6 +31,23 @@ def default_run():
         # process events
         if panther.events:
             for event in panther.events:
-                print(event)
+                if event.name == "quit":
+                    print("quitting...")
+                    event.auto_handle()  # execute the subscriber who wants to clean up their code before we exit
+                    exit(0)  # quit
 
-        panther.draw_screen()
+                event.auto_handle()
+                print(f"Handled event: {event}")
+
+        if panther.timer:
+            dt = panther.timer.time()
+            panther.timer.reset()
+
+        panther.events.execute('update', dt)
+
+        # draw the screen
+        if panther.canvas:
+            # call user-specified drawing function
+            panther.canvas.clear()
+            panther.events.execute('draw')
+            #panther.draw_screen()
