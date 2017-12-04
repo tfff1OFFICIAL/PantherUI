@@ -2,6 +2,7 @@
 Graphics part, this communicates with the panther.canvas through a nice little API
 """
 from kivy.graphics import *
+from kivy.core.image import Image as CoreImage
 import panther
 from panther.util import hex_to_rgb
 #from panther import Drawable, DrawableGroup
@@ -54,13 +55,15 @@ def set_background_color(colour):
     _draw_graphic(Rectangle(size=panther.canvas.size, pos=panther.canvas.pos))
 
 
-def ellipse(x, y, size_x, size_y):
+def ellipse(x, y, size_x, size_y, angle_start=0, angle_end=360):
     """
     draw an ellipse
     :param x: int, x co-ord
     :param y: int, y co-ord
     :param size_x: int, size on the x axis
     :param size_y: int, size on the y axis
+    :param angle_start: int, angle to start drawing ellipse
+    :param angle_end: int, angle to end drawing ellipse
     :return: None
     """
     _draw_graphic(Ellipse(
@@ -69,7 +72,7 @@ def ellipse(x, y, size_x, size_y):
     ))
 
 
-def circle(x, y, radius):
+def circle(x, y, radius,angle_start=0, angle_end=360):
     """
     draw a circle
     :param x: int, x co-ord
@@ -77,7 +80,41 @@ def circle(x, y, radius):
     :param radius: int, radius of circle
     :return: None
     """
-    _draw_graphic(Ellipse(
-        pos=(x-radius, y-radius),
-        size=(radius*2, radius*2)
+    ellipse(x, y, radius * 2, radius * 2, angle_start, angle_end)
+
+
+def line(*args, **kwargs):
+    _draw_graphic(Line(*args, **kwargs))
+
+
+def image(x, y, height, width, src):
+    """
+    draw image at <src>
+    :param x: int, x co-ord
+    :param y: int, y co-ord
+    :param height: int, height
+    :param width: int, width
+    :param src: string, location of image to load
+    :return: None
+    """
+    im = CoreImage(src)
+    print(im.texture)
+
+    _draw_graphic(Rectangle(
+        texture=im.texture,
+        pos=(x, y),
+        size=(width, height)
     ))
+
+
+def tiling_image(x, y, width, height, src):
+    raise NotImplementedError()
+    Color(.4, .4, .4, 1)
+    texture = CoreImage(src).texture
+    texture.wrap = 'repeat'
+    print(f"width: {texture.width}, height: {texture.height}")
+
+    nx = float(width) / texture.width
+    ny = float(height) / texture.height
+    Rectangle(pos=(x, y), size=(width, height), texture=texture,
+              tex_coords=(0, 0, nx, 0, nx, ny, 0, ny))

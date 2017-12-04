@@ -1,56 +1,11 @@
 """
 import this to begin
 """
-import time
 import queue
 import threading
-import datetime
 from panther import defaults
-from kivy.app import App
-from kivy.uix.widget import Widget
+from kivy.config import Config
 from kivy.clock import Clock
-from kivy.graphics import Color, Ellipse
-
-'''
-run = defaults.default_run
-load = None  # this is called once, when the app is starting
-update = None  # this is called to update every frame
-draw = None  # this is called to draw stuff on the screen every frame
-quit = None
-'''
-
-'''
-class Drawable:
-    def __init__(self, obj, *args, **kwargs):
-        self.obj = obj
-        self.args = args
-        self.kwargs = kwargs
-
-    def execute(self):
-        return self.obj(*self.args, **self.kwargs)
-
-    def __repr__(self):
-        return f'<Drawable (obj: {self.obj}, args: {self.args}, kwargs: {self.kwargs})>'
-
-
-class DrawableGroup:
-    """
-    A group of drawable that MUST be drawn in the same order
-    """
-    def __init__(self, *objs):
-        """
-        :param objs: list<Drawable>
-        """
-        self.objs = objs
-
-    def execute(self):
-        for obj in self.objs:
-            obj.execute()
-
-    def __iter__(self):
-        for obj in self.objs:
-            yield obj
-'''
 
 
 class Event:
@@ -76,12 +31,18 @@ class EventManager:
 
     event_handlers = dict(
         #run=defaults.default_run,
-        load=None,
-        update=None,
-        draw=None,
-        quit=None,
+        load=None,  # executed when the canvas first loads
+        update=None,  # executed once every tick
+        draw=None,  # executed once every tick, after update
+        quit=None,  # executed just before the app quits
         # touch
-        touchdown=lambda touch: print(f"touch: {touch} received")
+        touchdown=None,  # executes when a touch or click event occurs
+        touchup=None,  # executes when a touch or click is released
+        touchdrag=None,
+
+        # keyboard
+        keydown=None,
+        keyup=None
     )
 
     def __init__(self):
@@ -99,15 +60,18 @@ class EventManager:
         :return: None
         """
         try:
-            if self.event_handlers[event] is not None:  # if there's a registered event handler
-                self.events.put(Event(
-                    event,
-                    self.event_handlers[event],
-                    args,
-                    kwargs
-                ))
+            exe = self.event_handlers[event]
         except KeyError:
             print(f"PANTHER WARNING: {event} is not a valid event handler")
+            return
+
+        if exe is not None:  # if there's a registered event handler
+            self.events.put(Event(
+                event,
+                self.event_handlers[event],
+                args,
+                kwargs
+            ))
 
     def execute(self, event, *args, **kwargs):
         """
@@ -118,10 +82,13 @@ class EventManager:
         :return: None
         """
         try:
-            if self.event_handlers[event] is not None:  # if there's a registered event handler
-                self.event_handlers[event](*args, **kwargs)
+            exe = self.event_handlers[event]
         except KeyError:
             print(f"PANTHER WARNING: {event} is not a valid event handler")
+            return
+
+        if exe is not None:  # if there's a registered event handler
+            exe(*args, **kwargs)
 
     # @function decorators for events
     def subscribe(self, event, **options):
@@ -146,13 +113,54 @@ events = EventManager()
 
 
 class Conf:
-    width = None
-    height = None
+    # _window bound
+    width = 500
+    height = 400
+    title = "Panther App"
 
-    title = None
+    resizable = False
 
-    # protected, changes after run will have no effect
-    timer = True
+    # non-bound
+    clear_every_frame = True
+
+    def __init__(self):
+        Config.set('graphics', 'width', self.width)
+        Config.set('graphics', 'height', self.height)
+        Config.set('graphics', 'resizable', self.resizable)
+
+    def __setattr__(self, key, value):
+        if _window:  # these are window-bound, so they won't work if the window doesn't yet exist
+            if key == "title":
+                setattr(_window, key, value)
+            elif key == "height":
+                raise ValueError("Cannot modify height after calling panther.start()")
+            elif key == "width":
+                raise ValueError("Cannot modify width after calling panther.start()")
+        else:
+            if key in ("height", "width"):
+                Config.set('graphics', key, value)
+            if key == "resizable":
+                Config.set('graphics', key, value)
+
+        super().__setattr__(key, value)
+
+    def parse_conf_json(self, j: dict):
+        for key, value in j.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+
+    def load_from_file(self, path):
+        import os, json
+
+        if os.path.isfile(path):
+            with open(path) as f:
+                self.parse_conf_json(json.load(f))
+
+    def dump_to_file(self, path):
+        import json
+        with open(path, 'w') as f:
+            #print(f"dumping: {self.__dict__}")
+            json.dump(self.__dict__, f)
 
 
 conf = Conf()
@@ -161,70 +169,6 @@ _window = None
 canvas = None
 _loop_thread = None
 _draw_queue = queue.Queue()  # contains: Drawable
-_canvas_create = threading.Event()
-
-
-class _CanvasWidget(Widget):
-    """
-    This represents the Canvas, everything is drawn on it
-    """
-    def clear(self):
-        with self.canvas:
-            self.canvas.clear()
-
-    def tick(self):
-        """
-        this is called every tick, clear the canvas
-        :return: None
-        """
-        self.clear()
-
-    def draw(self, obj, *args, **kwargs):
-        """
-        Draw something on the canvas
-        :param obj: kivy.graphics.<something> object
-        :return: None
-        """
-        self.canvas.add(obj)
-        #with self.canvas:
-        #    obj(*args, **kwargs)
-
-    def draws(self, drawables):
-        """
-        Draw a lot of things on the canvas
-        :param drawables: list<Drawable>
-        :return: None
-        """
-        for item in drawables:
-            self.canvas.add(item)
-
-    def ask_to_update(self):
-        self.canvas.ask_update()
-
-    def on_touch_down(self, touch):
-        global events
-
-        #with self.canvas:
-        #    Color(255,255,0)
-        #    Rectangle(size=self.size, pos=self.pos)
-
-        events.trigger("touchdown", touch)
-        '''
-        with self.canvas:
-            Color(1, 1, 0)
-            d = 30.
-            Ellipse(pos=(touch.x - d / 2, touch.y - d / 2), size=(d, d))
-        '''
-
-
-class _PantherApp(App):
-    """
-    This is a kivy.App
-    it runs in a separate Thread
-    """
-    def build(self):
-        global canvas
-        return canvas
 
 
 def create_app():
@@ -234,7 +178,9 @@ def create_app():
     """
     global canvas, _window
 
-    print("Creating app...")
+    from panther._widgets import _CanvasWidget, _PantherApp
+
+    #print("Creating app...")
 
     canvas = _CanvasWidget()
 
@@ -243,6 +189,8 @@ def create_app():
 
     def update_event(dt):
         events.execute('update', dt)
+        if conf.clear_every_frame:
+            canvas.clear()
         events.execute('draw')
 
     Clock.schedule_once(load_event)
@@ -280,6 +228,15 @@ def start(width=None, height=None, title=None):
         raise ValueError("height, width, and title must be defined before start is called")
 
 
+def quit():
+    global _window
+
+    if _window:
+        _window.stop()
+
+    exit()
+
+'''
 def draw_screen():
     global _draw_queue, canvas
     if not _draw_queue.empty():
@@ -302,8 +259,9 @@ def title(t=None):
     """
     if not t:
         return
-
-
+'''
+'''
+# DEPRECATED: this is now done by the built-in kivy scheduler
 class Timer:
     def __init__(self):
         self.reset()
@@ -320,3 +278,4 @@ class Timer:
 
 if conf.timer:
     timer = Timer()
+'''
