@@ -35,6 +35,9 @@ class EventManager:
         update=None,  # executed once every tick
         draw=None,  # executed once every tick, after update
         quit=None,  # executed just before the app quits
+        # pointer
+        mousepos=None,
+
         # touch
         touchdown=None,  # executes when a touch or click event occurs
         touchup=None,  # executes when a touch or click is released
@@ -45,7 +48,10 @@ class EventManager:
         keyup=None,
 
         # window
-        resize=None
+        resize=None,
+
+        # window config
+        window_config_update=defaults.default_window_config_update
     )
 
     def __init__(self):
@@ -122,16 +128,20 @@ class Conf:
     title = "Panther App"
 
     resizable = False
+    show_cursor = True
 
-    # non-bound
+    # non-window-bound
     clear_every_frame = True
+    differentiate_between_touches_and_clicks = False
 
     def __init__(self):
-        Config.set('graphics', 'width', self.width)
-        Config.set('graphics', 'height', self.height)
-        Config.set('graphics', 'resizable', self.resizable)
+        #Config.set('graphics', 'width', self.width)
+        #Config.set('graphics', 'height', self.height)
+        #Config.set('graphics', 'resizable', self.resizable)
+        events.trigger('window_config_update')
 
     def __setattr__(self, key, value):
+        '''
         if _window:  # these are window-bound, so they won't work if the window doesn't yet exist
             if key == "title":
                 setattr(_window, key, value)
@@ -139,13 +149,22 @@ class Conf:
                 raise ValueError("Cannot modify height after calling panther.start()")
             elif key == "width":
                 raise ValueError("Cannot modify width after calling panther.start()")
+            elif key == "show_cursor":
+                raise ValueError("Cannot modify show_cursor after calling panther.start()")
         else:
             if key in ("height", "width"):
                 Config.set('graphics', key, value)
-            if key == "resizable":
+            elif key == "resizable":
                 Config.set('graphics', key, value)
+            elif key == "show_cursor":
+                print("setting show_cursor...")
+                Config.set('graphics', key, "0" if not value else "1")
+
+            Config.write()
+        '''
 
         super().__setattr__(key, value)
+        events.trigger('window_config_update')
 
     def parse_conf_json(self, j: dict):
         for key, value in j.items():

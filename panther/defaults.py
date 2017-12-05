@@ -13,6 +13,19 @@ def default_event_parse(dt):
         #print(f"Handled event: {event}")
 
 
+def default_window_config_update():
+    """
+    update the Window in _widgets._PantherApp
+    :param dt:
+    :return: None
+    """
+    import panther
+
+    print("triggering config update...")
+
+    panther._window.apply_conf()
+
+
 def default_run():
     """
     DEPRECATED!! - using kivy built-ins already

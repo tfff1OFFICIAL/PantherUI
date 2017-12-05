@@ -1,11 +1,11 @@
 """
 Graphics part, this communicates with the panther.canvas through a nice little API
 """
+from math import pi, sin, cos
 from kivy.graphics import *
 from kivy.core.image import Image as CoreImage
 import panther
 from panther.util import hex_to_rgb
-#from panther import Drawable, DrawableGroup
 
 
 def _draw_graphic(obj):
@@ -53,6 +53,66 @@ def set_background_color(colour):
     """
     set_colour(colour)
     _draw_graphic(Rectangle(size=panther.canvas.size, pos=panther.canvas.pos))
+
+
+def rectangle(x, y, width, height):
+    """
+    creates a new rectangle
+    :param x: int, x co-ord
+    :param y: int, y co-ord
+    :param width: int, width
+    :param height: int, height
+    :return: None
+    """
+    _draw_graphic(Rectangle(
+        pos=(x, y),
+        size=(width, height)
+    ))
+
+
+def triangle(x, y):
+    """
+    creates a new triangle
+    :param x: int, x co-ord
+    :param y: int, y co-ord
+    :return: None
+    """
+    raise NotImplementedError()
+
+
+def regular_polygon(radius, sides, x, y):
+    r = radius
+    a = 2 * pi / sides
+    vertices=[]
+    for i in range(sides):
+        vertices += [
+            x + cos(i * a) * r,
+            y + sin(i * a) * r,
+            cos(i * a),
+            sin(i * a),
+        ]
+    _draw_graphic(Mesh(
+        vertices=vertices,
+        indices=len(range(sides)),
+        mode='triangle_fan'
+    ))
+
+
+def polygon(*points):
+    """
+    Create a filled polygon with sides at each of the co-ordinates
+    :param points: tuple<tuple<int(x), int(y)> >, each of the points in the polygon (in order)
+    :return: None
+    """
+    p = []
+    for point in points:
+        p.append(point[0])
+        p.append(point[1])
+    _draw_graphic(Mesh(
+        vertices=p,
+        indices=list(range(len(p))),
+        mode="triangle_fan"
+    ))
 
 
 def ellipse(x, y, size_x, size_y, angle_start=0, angle_end=360):
