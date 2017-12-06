@@ -43,6 +43,8 @@ def update(dt):
     if key.down('escape'):
         panther.quit()
 
+    panther.conf.title = f"title: {x}"
+
 
 @panther.events.on('draw')
 def draw():
@@ -84,7 +86,12 @@ def draw():
     graphics.set_colour("FFFFFF")
     graphics.image(0, 0, 83, 75, "examples\\smiley.png")
 
-    panther.conf.title = f"title: {x}"
+    graphics.set_colour((255, 128, 000, 1))
+    graphics.text(
+        200,
+        420,
+        "test"
+    )
 
 
 @panther.events.on('resize')

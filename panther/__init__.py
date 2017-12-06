@@ -12,7 +12,7 @@ from kivy.clock import Clock
 
 if os.environ['panther_dev'] == "1":
     print("PANTHER: dev mode activated!")
-    Config.set('modules', 'monitor', '')
+    #Config.set('modules', 'monitor', '')
 
 
 class Event:

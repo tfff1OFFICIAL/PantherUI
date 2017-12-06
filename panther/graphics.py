@@ -5,6 +5,7 @@ from math import pi, sin, cos
 from kivy.graphics import *
 from kivy.utils import get_color_from_hex
 from kivy.core.image import Image as CoreImage
+from kivy.core.text import Label as CoreLabel
 import panther
 from panther.util import hex_to_rgb
 
@@ -193,3 +194,92 @@ def tiling_image(x, y, width, height, src):
     ny = float(height) / texture.height
     Rectangle(pos=(x, y), size=(width, height), texture=texture,
               tex_coords=(0, 0, nx, 0, nx, ny, 0, ny))
+
+
+class TextStyle:
+    def __init__(
+            self,
+            font_size=12,
+            font_name="panther/font/Roboto-Regular.ttf",
+            bold=False,
+            italic=False,
+            underline=False,
+            strikethrough=False,
+            halign='left',
+            valign='bottom',
+            shorten=False,
+            text_size=None,
+            mipmap=False,
+            color=None,
+            line_height=1.0,
+            strip=False,
+            strip_reflow=True,
+            shorten_from='center',
+            split_str=' ',
+            unicode_errors='replace',
+            font_hinting='normal',
+            font_kerning=True,
+            font_blended=True,
+            outline_width=None,
+            outline_color=None
+    ):
+        self.font_size = font_size
+        self.font_name = font_name
+        self.bold = bold
+        self.italic = italic
+        self.underline = underline
+        self.strikethrough = strikethrough
+        self.halign = halign
+        self.valign = valign
+        self.shorten = shorten
+        self.text_size = text_size
+        self.mipmap = mipmap
+        self.color = color
+        self.line_height = line_height
+        self.strip = strip
+        self.strip_reflow = strip_reflow
+        self.shorten_from = shorten_from
+        self.split_str = split_str
+        self.unicode_errors = unicode_errors
+        self.font_hinting = font_hinting
+        self.font_kerning = font_kerning
+        self.font_blended = font_blended
+        self.outline_width = outline_width
+        self.outline_color = outline_color
+
+    @property
+    def style(self):
+        return self.__dict__
+
+
+def text(x, y, text, style=TextStyle()):
+    """
+    Draw text
+    :param x: int, x co-ord
+    :param y: int, y co-ord
+    :param text: string
+    :return: None
+    """
+    label = CoreLabel(
+        text,
+        **style.style
+    )
+
+    if label.texture is None:
+        label.refresh()
+
+    #import inspect
+    #import pprint
+    #pprint.pprint(inspect.getmembers(label))#, lambda a: not (inspect.isroutine(a))))
+
+    print(label.texture)
+
+    rect = Rectangle(
+        pos=(x, y),
+        texture=label.texture,
+        size=(label.texture.size[0], label.texture.size[1])
+    )
+
+    print(rect)
+
+    _draw_graphic(rect)
