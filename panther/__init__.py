@@ -2,6 +2,7 @@
 import this to begin
 """
 import queue
+import copy
 import threading
 from panther import defaults
 from kivy.config import Config
@@ -10,17 +11,25 @@ from kivy.clock import Clock
 
 class Event:
     def __init__(self, name, handler, args, kwargs):
-        self.name = name
-        self.handler = handler
-        self.args = args
-        self.kwargs = kwargs
+        self.lock = threading.Lock()
+
+        with self.lock:
+            self.name = name
+            self.handler = handler
+            self.args = args
+            self.kwargs = kwargs
+            print(kwargs)
+            print(self.kwargs)
 
     def auto_handle(self):
         """
         Just execute the handler with raw args and kwargs
         :return: any
         """
-        return self.handler(*self.args, **self.kwargs)
+        with self.lock:
+            print(self.kwargs)
+            print(self.args)
+            return self.handler(*self.args, **self.kwargs)
 
     def __repr__(self):
         return f'<Event (name: {self.name}, handler: {self.handler.__name__}, args: {self.args}, kwargs: {self.kwargs})'
@@ -75,12 +84,22 @@ class EventManager:
             return
 
         if exe is not None:  # if there's a registered event handler
+            '''
             self.events.put(Event(
                 event,
                 self.event_handlers[event],
                 args,
                 kwargs
             ))
+            '''
+            d = dict(
+                event=event,
+                handler=self.event_handlers[event],
+                args=list(args),
+                kwargs=kwargs
+            )
+            print(f"adding event: {d}")
+            self.events.put(kwargs)
 
     def execute(self, event, *args, **kwargs):
         """
@@ -163,13 +182,17 @@ class Conf:
             Config.write()
         '''
 
+        print("Set attribute called")
         super().__setattr__(key, value)
-        events.trigger('window_config_update')
+        events.trigger('window_config_update', 1, key=key, value=value)
+
+    def silent_setattr(self, key, value):
+        super().__setattr__(key, value)
 
     def parse_conf_json(self, j: dict):
         for key, value in j.items():
             if hasattr(self, key):
-                setattr(self, key, value)
+                self.__setattr__(key, value)
 
     def load_from_file(self, path):
         import os, json

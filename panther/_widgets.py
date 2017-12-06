@@ -81,20 +81,37 @@ class _PantherApp(App):
 
     def on_resize(self, window, width, height):
         # TODO: maybe modify the panther.conf here too?
-        panther.events.trigger('resize', width, height)
+        if panther.conf.resizable:  # automatically apply to config
+            panther.conf.silent_setattr("width", width)
+            panther.conf.silent_setattr("height", height)
+
+        def apply_func():
+            """
+            this is passed to the resize event function, it calls this to apply the resize properly
+            :return: None
+            """
+            print(f"applying width: {width}, height: {height}")
+            panther.conf.silent_setattr("width", width)
+            panther.conf.silent_setattr("height", height)
+
+        panther.events.trigger('resize', width, height, apply_func)
 
     def on_mouse_pos(self, window, pos):
         panther.events.trigger('mousepos', pos)
 
-    def apply_conf(self):
+    def apply_conf(self, key, value):
         """
         Apply config, this is called once on build, and could be called later
         :return: None
         """
-        Window.show_cursor = panther.conf.show_cursor
-        Window.size = (panther.conf.width, panther.conf.height)
-        Window.resizable = panther.conf.resizable
-        self.title = panther.conf.title
+        if key == "show_cursor":
+            Window.show_cursor = panther.conf.show_cursor
+        elif key in ("width", "height"):
+            Window.size = (panther.conf.width, panther.conf.height)
+        elif key == "resizable":
+            Window.resizable = panther.conf.resizable
+        elif key == "title":
+            self.title = panther.conf.title
 
     def build(self):
         Window.bind(on_resize=self.on_resize, mouse_pos=self.on_mouse_pos)

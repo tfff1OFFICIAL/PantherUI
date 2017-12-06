@@ -61,21 +61,22 @@ def draw():
 
     print("MOUSE: x: {}, y: {}".format(mouse_x, mouse_y))
 
-    graphics.set_colour((1, 0, 0, 0.7))
-    #graphics.polygon(
-    #    (mouse_x, mouse_y),
-    #    (mouse_x+5, mouse_y),
-    #    (mouse_x+2, mouse_y-2),
-    #    (mouse_x+5, mouse_y-5),
-    #    (mouse_x, mouse_y)
-    #)
-
-    graphics.circle(
-        (mouse_x - 2),
-        (mouse_y - 2),
-        4,
-        4
+    graphics.set_colour((255, 0, 0, 0.7))
+    graphics.regular_polygon(50, 9, 250, 250)
+    graphics.polygon(
+        (mouse_x, mouse_y),
+        (mouse_x+13, mouse_y+6),
+        (mouse_x+7, mouse_y-2),
+        (mouse_x+10, mouse_y-11),
+        (mouse_x, mouse_y)
     )
+
+    #graphics.circle(
+    #    (mouse_x - 2),
+    #    (mouse_y - 2),
+    #    4,
+    #    4
+    #)
 
     #for touch in touches:
     #    graphics.line(points=touches[touch])
@@ -87,8 +88,14 @@ def draw():
 
 
 @panther.events.on('resize')
-def on_resize(width, height):
-    print(f"resized to: {width}x{height}")
+def on_resize(w, h, apply_func):
+    print(f"resized to: {w}x{h}")
+    if h <= 600 and w <= 1000:
+        print("applying...")
+        apply_func()
+    else:
+        panther.conf.width = 1000
+        panther.conf.height = 600
 
 #panther.conf.height = 500
 #panther.conf.width = 500
@@ -98,4 +105,3 @@ def on_resize(width, height):
 panther.conf.load_from_file('examples/test_config.json')
 
 panther.start()
-

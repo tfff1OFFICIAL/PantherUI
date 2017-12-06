@@ -3,6 +3,7 @@ Graphics part, this communicates with the panther.canvas through a nice little A
 """
 from math import pi, sin, cos
 from kivy.graphics import *
+from kivy.utils import get_color_from_hex
 from kivy.core.image import Image as CoreImage
 import panther
 from panther.util import hex_to_rgb
@@ -37,9 +38,17 @@ def set_colour(colour):
     :return: None
     """
     if isinstance(colour, tuple) or isinstance(colour, list):
-        _draw_graphic(Color(*colour))
+        if len(colour) == 4:
+            rgb = [colour[c] / 255 for c in range(len(colour) - 1)]
+
+            _draw_graphic(Color(*rgb, colour[-1]))
+        elif len(colour) == 3:
+            rgb = [c / 255 for c in colour]
+
+            _draw_graphic(Color(*rgb, 1))
+
     elif isinstance(colour, str) and len(colour) == 6:
-        _draw_graphic(Color(*hex_to_rgb(colour)))
+        _draw_graphic(Color(*get_color_from_hex(colour)))
     else:
         print(colour)
         raise ValueError("valid hex or rgb value must be present")
@@ -93,7 +102,7 @@ def regular_polygon(radius, sides, x, y):
         ]
     _draw_graphic(Mesh(
         vertices=vertices,
-        indices=len(range(sides)),
+        indices=list(range(sides)),
         mode='triangle_fan'
     ))
 
@@ -105,12 +114,18 @@ def polygon(*points):
     :return: None
     """
     p = []
-    for point in points:
-        p.append(point[0])
-        p.append(point[1])
+    a = 2 * pi / len(points) - 1
+    indices = []
+    for i in range(len(points)):
+        p.append(points[i][0])
+        p.append(points[i][1])
+        p.append(points[i][0])
+        p.append(points[i][1])
+        indices.append(i)
+
     _draw_graphic(Mesh(
         vertices=p,
-        indices=list(range(len(p))),
+        indices=indices,
         mode="triangle_fan"
     ))
 
