@@ -1,6 +1,7 @@
 """
 import this to begin
 """
+import os
 import queue
 import copy
 import threading
@@ -9,27 +10,24 @@ from kivy.config import Config
 from kivy.clock import Clock
 
 
+if os.environ['panther_dev'] == "1":
+    print("PANTHER: dev mode activated!")
+    Config.set('modules', 'monitor', '')
+
+
 class Event:
     def __init__(self, name, handler, args, kwargs):
-        self.lock = threading.Lock()
-
-        with self.lock:
-            self.name = name
-            self.handler = handler
-            self.args = args
-            self.kwargs = kwargs
-            print(kwargs)
-            print(self.kwargs)
+        self.name = name
+        self.handler = handler
+        self.args = args
+        self.kwargs = kwargs
 
     def auto_handle(self):
         """
         Just execute the handler with raw args and kwargs
         :return: any
         """
-        with self.lock:
-            print(self.kwargs)
-            print(self.args)
-            return self.handler(*self.args, **self.kwargs)
+        return self.handler(*self.args, **self.kwargs)
 
     def __repr__(self):
         return f'<Event (name: {self.name}, handler: {self.handler.__name__}, args: {self.args}, kwargs: {self.kwargs})'
@@ -84,22 +82,12 @@ class EventManager:
             return
 
         if exe is not None:  # if there's a registered event handler
-            '''
             self.events.put(Event(
                 event,
                 self.event_handlers[event],
                 args,
                 kwargs
             ))
-            '''
-            d = dict(
-                event=event,
-                handler=self.event_handlers[event],
-                args=list(args),
-                kwargs=kwargs
-            )
-            print(f"adding event: {d}")
-            self.events.put(kwargs)
 
     def execute(self, event, *args, **kwargs):
         """
@@ -157,7 +145,7 @@ class Conf:
         #Config.set('graphics', 'width', self.width)
         #Config.set('graphics', 'height', self.height)
         #Config.set('graphics', 'resizable', self.resizable)
-        events.trigger('window_config_update')
+        events.trigger('window_config_update', key="refresh_all", value="")
 
     def __setattr__(self, key, value):
         '''
@@ -182,9 +170,8 @@ class Conf:
             Config.write()
         '''
 
-        print("Set attribute called")
         super().__setattr__(key, value)
-        events.trigger('window_config_update', 1, key=key, value=value)
+        events.trigger('window_config_update', key=key, value=value)
 
     def silent_setattr(self, key, value):
         super().__setattr__(key, value)
@@ -192,7 +179,7 @@ class Conf:
     def parse_conf_json(self, j: dict):
         for key, value in j.items():
             if hasattr(self, key):
-                self.__setattr__(key, value)
+                setattr(self, key, value)
 
     def load_from_file(self, path):
         import os, json
@@ -242,6 +229,8 @@ def create_app():
 
     update_event = Clock.schedule_interval(update_event, 1 / 30.)
     event_checker = Clock.schedule_interval(defaults.default_event_parse, 1/30.)
+
+
 
     _window = _PantherApp()
 

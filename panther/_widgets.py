@@ -104,7 +104,14 @@ class _PantherApp(App):
         Apply config, this is called once on build, and could be called later
         :return: None
         """
-        if key == "show_cursor":
+        print(f"Apply config changes, '{key}' = '{value}'")
+
+        if key == "refresh_all":
+            Window.show_cursor = panther.conf.show_cursor
+            Window.size = (panther.conf.width, panther.conf.height)
+            Window.resizable = panther.conf.resizable
+
+        elif key == "show_cursor":
             Window.show_cursor = panther.conf.show_cursor
         elif key in ("width", "height"):
             Window.size = (panther.conf.width, panther.conf.height)

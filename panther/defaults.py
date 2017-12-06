@@ -1,6 +1,6 @@
 import time
 
-'''
+
 def default_event_parse(dt):
     import panther
     for event in panther.events:
@@ -11,9 +11,9 @@ def default_event_parse(dt):
 
         event.auto_handle()
         #print(f"Handled event: {event}")
+
+
 '''
-
-
 def default_event_parse(dt):
     import panther
     for event in panther.events:
@@ -25,7 +25,7 @@ def default_event_parse(dt):
 
         event["handler"](*event["args"], **event["kwargs"])
         print(f"Handled event: {event}")
-
+'''
 
 def default_window_config_update(key, value):
     """
