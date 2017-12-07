@@ -67,7 +67,7 @@ def set_background_color(colour):
 
 def rectangle(x, y, width, height):
     """
-    creates a new rectangle
+    creates a new rectangle, with the bottom left corner at <x>, <y>
     :param x: int, x co-ord
     :param y: int, y co-ord
     :param width: int, width
