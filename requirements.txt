@@ -1,4 +1,3 @@
-toms-util
 #Pycairo
 Pillow
 
