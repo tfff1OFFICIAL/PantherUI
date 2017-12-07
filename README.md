@@ -4,4 +4,4 @@
 
 A python module for function and event-driven UI's, especially useful for 2D games.
 
-docs: [http://pantherui.readthedocs.io/en/latest/getting_started/](http://pantherui.readthedocs.io/en/latest/getting_started/)
+docs: [http://pantherui.readthedocs.io/en/latest/](http://pantherui.readthedocs.io/en/latest/)
