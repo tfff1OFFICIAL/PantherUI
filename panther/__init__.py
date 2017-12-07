@@ -10,6 +10,8 @@ from kivy.config import Config
 from kivy.clock import Clock
 
 
+__version__ = "0.0.1"
+
 if os.environ['panther_dev'] == "1":
     print("PANTHER: dev mode activated!")
     #Config.set('modules', 'monitor', '')
