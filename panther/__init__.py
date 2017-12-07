@@ -1,6 +1,8 @@
 """
 import this to begin
 """
+__version__ = "0.0.1"
+
 import os
 import queue
 import copy
@@ -9,13 +11,12 @@ from panther import defaults
 from kivy.config import Config
 from kivy.clock import Clock
 
-
-__version__ = "0.0.1"
-
-if os.environ['panther_dev'] == "1":
-    print("PANTHER: dev mode activated!")
-    #Config.set('modules', 'monitor', '')
-
+try:
+    if os.environ['panther_dev'] == "1":
+        print("PANTHER: dev mode activated!")
+        #Config.set('modules', 'monitor', '')
+except KeyError:
+    pass
 
 class Event:
     def __init__(self, name, handler, args, kwargs):
