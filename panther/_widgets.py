@@ -104,7 +104,6 @@ class _PantherApp(App):
         Apply config, this is called once on build, and could be called later
         :return: None
         """
-        print(f"Apply config changes, '{key}' = '{value}'")
 
         if key == "refresh_all":
             Window.show_cursor = panther.conf.show_cursor

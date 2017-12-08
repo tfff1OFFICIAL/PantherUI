@@ -18,6 +18,7 @@ try:
 except KeyError:
     pass
 
+
 class Event:
     def __init__(self, name, handler, args, kwargs):
         self.name = name
@@ -140,6 +141,9 @@ class Conf:
     resizable = False
     show_cursor = True
 
+    # unchangable after start
+    max_fps = 60  # maximum number of ticks (frames) per second. NOTE: this is unlikely to ever be actually hit due to slowness in the system
+
     # non-window-bound
     clear_every_frame = True
     differentiate_between_touches_and_clicks = False
@@ -172,6 +176,8 @@ class Conf:
 
             Config.write()
         '''
+        if _window is not None and key == "max_fps":
+            raise ValueError("Cannot modify max_fps after calling panther.start()")
 
         super().__setattr__(key, value)
         events.trigger('window_config_update', key=key, value=value)
@@ -230,8 +236,8 @@ def create_app():
 
     Clock.schedule_once(load_event)
 
-    update_event = Clock.schedule_interval(update_event, 1 / 30.)
-    event_checker = Clock.schedule_interval(defaults.default_event_parse, 1/30.)
+    update_event = Clock.schedule_interval(update_event, 1 / conf.max_fps)
+    event_checker = Clock.schedule_interval(defaults.default_event_parse, 1/conf.max_fps)
 
 
 

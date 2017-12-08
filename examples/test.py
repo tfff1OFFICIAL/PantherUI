@@ -45,6 +45,8 @@ def update(dt):
 
     panther.conf.title = f"title: {x}"
 
+    print(f"FPS: {1 / dt}")
+
 
 @panther.events.on('draw')
 def draw():
@@ -65,6 +67,9 @@ def draw():
 
     graphics.set_colour((255, 0, 0, 0.7))
     graphics.regular_polygon(50, 9, 250, 250)
+
+    # cursor
+    graphics.rotate(mouse_x, mouse_y, -55)
     graphics.polygon(
         (mouse_x, mouse_y),
         (mouse_x+13, mouse_y+6),
@@ -72,6 +77,7 @@ def draw():
         (mouse_x+10, mouse_y-11),
         (mouse_x, mouse_y)
     )
+    graphics.unrotate()
 
     #graphics.circle(
     #    (mouse_x - 2),
@@ -92,6 +98,10 @@ def draw():
         420,
         "test"
     )
+
+    graphics.rotate(200, 200, 45)
+    graphics.rectangle(200, 200, 20, 20)
+    #graphics.unrotate()
 
 
 @panther.events.on('resize')
