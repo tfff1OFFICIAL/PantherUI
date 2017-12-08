@@ -1,31 +1,14 @@
-import time
-
-
 def default_event_parse(dt):
     import panther
     for event in panther.events:
         if event.name == "quit":
-            print("quitting...")
+            print("PANTHER: quitting...")
             event.auto_handle()  # execute the subscriber who wants to clean up their code before we exit
             exit(0)  # quit
 
         event.auto_handle()
         #print(f"Handled event: {event}")
 
-
-'''
-def default_event_parse(dt):
-    import panther
-    for event in panther.events:
-        print(f"Handling event: {event}")
-        if event["event"] == "quit":
-            print("quitting...")
-            event["handler"](*event["args"], **event["kwargs"])  # execute the subscriber who wants to clean up their code before we exit
-            exit(0)  # quit
-
-        event["handler"](*event["args"], **event["kwargs"])
-        print(f"Handled event: {event}")
-'''
 
 def default_window_config_update(key, value):
     """
@@ -34,8 +17,6 @@ def default_window_config_update(key, value):
     :return: None
     """
     import panther
-
-    print("triggering config update...")
 
     panther._window.apply_conf(key, value)
 

@@ -31,6 +31,29 @@ def clear():
     panther.canvas.clear()
 
 
+def rotate(x_origin, y_origin, degrees):
+    """
+    rotate the canvas by <degrees> degrees
+    :param x_origin: number, x co-ordinate to act as centre of rotation
+    :param y_origin: number, y co-ordinate to act as centre of rotation
+    :param degrees: number
+    :return: None
+    """
+    _draw_graphic(PushMatrix())
+    _draw_graphic(Rotate(
+        angle=degrees,
+        origin=(x_origin, y_origin)
+    ))
+
+
+def unrotate():
+    """
+    resets the canvas' rotation
+    :return: None
+    """
+    _draw_graphic(PopMatrix())
+
+
 def set_colour(colour):
     """
     Set the colour of whatever is painted next
