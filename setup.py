@@ -1,9 +1,9 @@
 from distutils.core import setup
 
-import panther
+from panther import __version__
 
 setup(name='PantherUI',
-      version=panther.__version__,
+      version=__version__,
       description='A simple interface using Kivy for easy and quick game and graphical application development',
       author='tfff1OFFICIAL',
       author_email='tfff1s.modpacks@gmail.com',
