@@ -1,8 +1,6 @@
 """
 import this to begin
 """
-__version__ = "0.0.3"
-
 import os
 import queue
 import copy
