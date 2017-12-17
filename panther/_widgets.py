@@ -1,5 +1,6 @@
 from kivy.core.window import Window
 from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.widget import Widget
 import panther
 
@@ -18,12 +19,12 @@ class _CanvasWidget(Widget):
         self._keyboard = None
 
     def _on_keyboard_up(self, keyboard, keycode):
-        panther.events.trigger("keyup", keyboard, keycode)
+        panther.trigger_event("keyup", keyboard, keycode)
 
         return True
 
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
-        panther.events.trigger("keydown", keyboard, keycode, text, modifiers)
+        panther.trigger_event("keydown", keyboard, keycode, text, modifiers)
 
         return True  # keep the app open, even if ESC is pressed
 
@@ -59,25 +60,25 @@ class _CanvasWidget(Widget):
         self.canvas.ask_update()
 
     def on_touch_down(self, touch):
-        panther.events.trigger("touchdown", touch)
+        panther.trigger_event("touchdown", touch)
 
     def on_touch_up(self, touch):
-        panther.events.trigger("touchup", touch)
+        panther.trigger_event("touchup", touch)
 
     def on_touch_move(self, touch):
-        panther.events.trigger("touchdrag", touch)
+        panther.trigger_event("touchdrag", touch)
 
 
-class _PantherApp(App):
+class _PantherApp(BoxLayout, App):
     """
     This is a kivy.App
     it runs in a separate Thread
     """
     def on_stop(self):
-        panther.events.execute("quit")
+        panther.quit()  # call quit on every layer
 
     def on_start(self):
-        panther.events.execute("load")
+        panther.load()  # call load on every layer
 
     def on_resize(self, window, width, height):
         # TODO: maybe modify the panther.conf here too?
@@ -94,10 +95,10 @@ class _PantherApp(App):
             panther.conf.silent_setattr("width", width)
             panther.conf.silent_setattr("height", height)
 
-        panther.events.trigger('resize', width, height, apply_func)
+        panther.trigger_event('resize', width, height, apply_func)
 
     def on_mouse_pos(self, window, pos):
-        panther.events.trigger('mousepos', pos)
+        panther.trigger_event('mousepos', pos)
 
     def apply_conf(self, key, value):
         """
@@ -125,4 +126,6 @@ class _PantherApp(App):
 
         self.title = panther.conf.title
 
-        return panther.canvas
+        self.add_widget(panther.canvas.widget)
+
+        return self

@@ -76,7 +76,7 @@ def set_colour(colour):
     else:
         print(colour)
         raise ValueError("valid hex or rgb value must be present")
-
+set_color = set_colour
 
 def set_background_color(colour):
     """
@@ -86,6 +86,7 @@ def set_background_color(colour):
     """
     set_colour(colour)
     _draw_graphic(Rectangle(size=panther.canvas.size, pos=panther.canvas.pos))
+set_background_colour = set_background_color
 
 
 def rectangle(x, y, width, height):

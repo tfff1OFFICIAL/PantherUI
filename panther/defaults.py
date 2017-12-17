@@ -10,6 +10,12 @@ def default_event_parse(dt):
         #print(f"Handled event: {event}")
 
 
+def default_multilayer_event_parse(dt):
+    import panther
+    for layer in panther.layers:
+        layer.parse_events()
+
+
 def default_window_config_update(key, value):
     """
     update the Window in _widgets._PantherApp

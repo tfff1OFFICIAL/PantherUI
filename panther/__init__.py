@@ -1,20 +1,11 @@
 """
-import this to begin
+Root of Panther module
 """
-import os
-import queue
-import copy
 import threading
-from panther import defaults
-from kivy.config import Config
+from functools import wraps
+import queue
 from kivy.clock import Clock
-
-try:
-    if os.environ['panther_dev'] == "1":
-        print("PANTHER: dev mode activated!")
-        #Config.set('modules', 'monitor', '')
-except KeyError:
-    pass
+from panther import defaults
 
 
 class Event:
@@ -29,6 +20,7 @@ class Event:
         Just execute the handler with raw args and kwargs
         :return: any
         """
+
         return self.handler(*self.args, **self.kwargs)
 
     def __repr__(self):
@@ -36,38 +28,37 @@ class Event:
 
 
 class EventManager:
-    events = queue.Queue()
-
-    event_handlers = dict(
-        #run=defaults.default_run,
-        load=None,  # executed when the canvas first loads
-        update=None,  # executed once every tick
-        draw=None,  # executed once every tick, after update
-        quit=None,  # executed just before the app quits
-        # pointer
-        mousepos=None,
-
-        # touch
-        touchdown=None,  # executes when a touch or click event occurs
-        touchup=None,  # executes when a touch or click is released
-        touchdrag=None,  # executes when a drag occurs
-
-        # keyboard
-        keydown=None,
-        keyup=None,
-
-        # window
-        resize=None,
-
-        # window config
-        window_config_update=defaults.default_window_config_update
-    )
-
     def __init__(self):
-        self.kivy_trigger = Clock.create_trigger(self.trigger)
+        #self.kivy_trigger = Clock.create_trigger(self.trigger)
+        self.events = queue.Queue()
+
+        self.event_handlers = dict(
+            # run=defaults.default_run,
+            load=None,  # executed when the canvas first loads
+            update=None,  # executed once every tick
+            draw=None,  # executed once every tick, after update
+            quit=None,  # executed just before the app quits
+            # pointer
+            mousepos=None,
+
+            # touch
+            touchdown=None,  # executes when a touch or click event occurs
+            touchup=None,  # executes when a touch or click is released
+            touchdrag=None,  # executes when a drag occurs
+
+            # keyboard
+            keydown=None,
+            keyup=None,
+
+            # window
+            resize=None,
+
+            # window config
+            window_config_update=defaults.default_window_config_update
+        )
 
     def add(self, event_name, f, **options):
-        self.event_handlers[event_name] = lambda *args, **kwargs: f(*args, **kwargs)
+        self.event_handlers[event_name] = lambda *a, **kw: f(*a, **kw)
 
     def trigger(self, event, *args, **kwargs):
         """
@@ -109,15 +100,15 @@ class EventManager:
             exe(*args, **kwargs)
 
     # @function decorators for events
-    def subscribe(self, event, **options):
-        def decorator(f):
+    def subscribe_to(self, event, **options):
+        def decorator(f, *args, **kwargs):
             ev = event
             self.add(event, f, **options)
             return f
 
         return decorator
 
-    on = subscribe
+    on = subscribe_to
 
     def __len__(self):
         return self.events.qsize()
@@ -125,9 +116,6 @@ class EventManager:
     def __iter__(self):
         while not self.events.empty():
             yield self.events.get()
-
-
-events = EventManager()
 
 
 class Conf:
@@ -202,42 +190,126 @@ class Conf:
             json.dump(self.__dict__, f)
 
 
-conf = Conf()
+class PantherLayerNamespace:
+    def __init__(self):
+        vars = dict()
+
+
+class PantherLayer:
+    """
+    A canvas layer in Panther with it's own events and drawing functionality
+    """
+    def __init__(self):
+        from panther._widgets import _CanvasWidget
+
+        self.canvas = _CanvasWidget()
+        self.events = EventManager()
+
+        self.clear_next_frame = True
+
+        self.namespace = PantherLayerNamespace()
+
+    @property
+    def widget(self):
+        return self.canvas
+
+    def clear_canvas(self):
+        if self.clear_next_frame:
+            self.canvas.clear()
+
+    def locals(self, func):
+        @wraps(func)
+        def wrapped(*args, **kwargs):
+            #return func(self.namespace, *args, **kwargs)
+            return func(self.namespace, *args, **kwargs)
+
+        return wrapped
+
+    def parse_events(self):
+        """
+        load all of the events for this layer
+        :return: None
+        """
+        for event in self.events:
+            if event.name == "quit":
+                print("PANTHER (layer: {}): quitting...".format(self))
+                event.auto_handle()  # execute the subscriber who wants to clean up their code before we exit
+
+                if not app_quitting:  # if for some reason only this layer is quitting, tell the rest
+                    quit(calling_layer_id=id(self))
+
+            event.auto_handle(namespace=self.namespace)
+
+    def start(self):
+        global _window
+
+        if _window is not None:
+            _window.add_widget(self.canvas)
+
+        self.events.execute("load")
+
+
+class LayerManager:
+    def __init__(self):
+        self.layers = []
+
+    def add(self):
+        l = PantherLayer()
+        self.layers.append(l)
+        l.start()
+
+        return l
+
+    def add_root(self):
+        l = PantherLayer()
+        self.layers.append(l)
+
+        return l
+
+    def __getitem__(self, item):
+        return self.layers[item]
+
+    def __setitem__(self, key, value):
+        raise Exception("You cannot replace a layer once it's been created")
+
+    def __delitem__(self, key):
+        raise Exception("You cannot delete a layer once it's been created (yet)")
+
+    def __iter__(self):
+        return iter(self.layers)
+
 
 _window = None
-canvas = None
-_loop_thread = None
-_draw_queue = queue.Queue()  # contains: Drawable
+layers = LayerManager()
+started = False
+app_quitting = False
+
+# simple (root-layer) API
+canvas = layers.add_root()
+events = canvas.events
+
+
+conf = Conf()
 
 
 def create_app():
     """
-    this runs in a new thread
+    create the Window, and add the root canvas
     :return: None
     """
     global canvas, _window
 
-    from panther._widgets import _CanvasWidget, _PantherApp
-
-    #print("Creating app...")
-
-    canvas = _CanvasWidget()
-
-    def load_event(dt):
-        events.execute('load')
+    from panther._widgets import _PantherApp
 
     def update_event(dt):
-        events.execute('update', dt)
-        if conf.clear_every_frame:
-            canvas.clear()
-        events.execute('draw')
-
-    Clock.schedule_once(load_event)
+        for layer in layers:
+            layer.events.execute('update', dt)
+            if conf.clear_every_frame:
+                layer.clear_canvas()
+            layer.events.execute('draw')
 
     update_event = Clock.schedule_interval(update_event, 1 / conf.max_fps)
-    event_checker = Clock.schedule_interval(defaults.default_event_parse, 1/conf.max_fps)
-
-
+    event_checker = Clock.schedule_interval(defaults.default_event_parse, 1 / conf.max_fps)
 
     _window = _PantherApp()
 
@@ -245,78 +317,37 @@ def create_app():
 
 
 def start(width=None, height=None, title=None):
-    """
-    Run the panther application
-    :return: None
-    """
-    global _window, canvas, conf, events, _loop_thread
+    global _window, layers, started
 
-    if width:
+    if width is not None:
         conf.width = width
-    if height:
+    if height is not None:
         conf.height = height
-    if title:
+    if title is not None:
         conf.title = title
 
-    if conf.width and conf.height and conf.title:
-        _loop_thread = threading.Thread(target=create_app)
-        _loop_thread.start()
-
-        #event = Clock.schedule_interval()
-
-        #events.execute('run')
+    if not started:
+        if conf.width and conf.height and conf.title is not None:
+            create_app()
     else:
-        raise ValueError("height, width, and title must be defined before start is called")
+        raise Exception("You cannot start panther more than once!")
 
 
-def quit():
-    global _window
-
-    if _window:
-        _window.stop()
-
-    exit()
-
-'''
-def draw_screen():
-    global _draw_queue, canvas
-    if not _draw_queue.empty():
-        #print(f"_draw_queue length is: {_draw_queue.qsize()}")
-
-        while not _draw_queue.empty():
-            got = _draw_queue.get()
-            #print(f"Got {got} from queue")
-
-            canvas.draw(got)
-
-        canvas.ask_to_update()
+def trigger_event(*args, **kwargs):
+    for layer in layers:
+        layer.events.trigger(*args, **kwargs)
 
 
-def title(t=None):
-    """
-    sets the title
-    :param t:
-    :return:
-    """
-    if not t:
-        return
-'''
-'''
-# DEPRECATED: this is now done by the built-in kivy scheduler
-class Timer:
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.start_time = time.time()
-
-    def time(self):
-        return datetime.timedelta(seconds=time.time() - self.start_time)
-
-    def sleep(self, length):
-        time.sleep(length)
+def load():
+    for layer in layers:
+        layer.events.execute("load")
 
 
-if conf.timer:
-    timer = Timer()
-'''
+def quit(code=0, calling_layer_id=None):
+    for layer in layers:
+        if calling_layer_id and id(layer) == calling_layer_id:
+            continue  # skip the calling layer (if any) because they've already quit
+
+        layer.events.execute('quit')
+
+    exit(code)
