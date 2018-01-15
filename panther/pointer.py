@@ -49,7 +49,6 @@ def touch_down(touch):
     Add a new Pointer to the pointers
     :return: None
     """
-    print(f"touch: {touch.__dict__}")
     _pointers[touch.uid] = Pointer(
         touch.uid,
         touch.x,

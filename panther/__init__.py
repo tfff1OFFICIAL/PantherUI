@@ -36,7 +36,8 @@ class EventManager:
 
         self.event_handlers = dict(
             # run=defaults.default_run,
-            load=None,  # executed when the canvas first loads
+            init=None,  # executed just before the canvas loads (therefore, before first draw). Initialise local variables here, not in load
+            load=None,  # executed when the canvas first loads (after first draw)
             update=None,  # executed once every tick
             draw=None,  # executed once every tick, after update
             quit=None,  # executed just before the app quits
@@ -192,10 +193,24 @@ class Conf:
             json.dump(self.__dict__, f)
 
 
-class PantherLayerNamespace:
+class PantherLayerNamespace(object):
     def __init__(self):
-        vars = defaultdict(lambda: None)
+        object.__setattr__(self, "variables", dict())
 
+    # for cleaner use
+    def __getattribute__(self, item):
+        try:
+            return object.__getattribute__(self, "variables")[item]
+        except KeyError as ex:
+            raise AttributeError(repr(item))
+
+    def __setattr__(self, key, value):
+        object.__getattribute__(self, "variables")[key] = value
+
+    def __delattr__(self, item):
+        del object.__getattribute__(self, "variables")[item]
+
+    # for use like a dictionary
     def __getitem__(self, item):
         return self.vars[item]
 
@@ -207,9 +222,10 @@ class PantherLayer:
     """
     A canvas layer in Panther with it's own events and drawing functionality
     """
-    def __init__(self, is_root=False):
+    def __init__(self, id, is_root=False):
         from panther._widgets import _CanvasWidget
 
+        self.id = id
         self.is_root = is_root
 
         self.canvas = _CanvasWidget()
@@ -257,7 +273,7 @@ class PantherLayer:
                 if not app_quitting:  # if for some reason only this layer is quitting, tell the rest
                     quit(calling_layer_id=id(self))
 
-            event.auto_handle(namespace=self.namespace)
+            event.auto_handle()
 
     def do_draw(self):
         if self.is_root:  # expose the super-simple API to the root layer
@@ -273,15 +289,17 @@ class PantherLayer:
         else:
             raise RuntimeError("panther._window is not defined, therefore the layer cannot be started")
 
-        self.events.execute("load")
+        #self.events.execute("load")
 
+    def __repr__(self):
+        return f'<Layer (id: {self.id})>'
 
 class LayerManager:
     def __init__(self):
         self.layers = []
 
-    def add(self):
-        l = PantherLayer()
+    def add(self, name=None):
+        l = PantherLayer(id=(str(len(self.layers)) if name is None else name))
         self.layers.append(l)
 
         if started:
@@ -290,10 +308,15 @@ class LayerManager:
         return l
 
     def add_root(self):
-        l = PantherLayer(is_root=True)
+        l = PantherLayer(id="root", is_root=True)
         self.layers.append(l)
 
         return l
+
+    def init_layers(self):
+        # inits the layers _before_ they first are drawn
+        for layer in self:
+            layer.events.execute("init")
 
     def start_layers(self):
         # starts all of the layers after _window has been created
@@ -322,6 +345,7 @@ app_quitting = False
 canvas = layers.add_root()
 events = canvas.events
 graphics = canvas.graphics
+locals = canvas.locals
 
 
 conf = Conf()
@@ -344,7 +368,9 @@ def create_app():
             layer.do_draw()
 
     update_event = Clock.schedule_interval(update_event, 1 / conf.max_fps)
-    event_checker = Clock.schedule_interval(defaults.default_event_parse, 1 / conf.max_fps)
+    event_checker = Clock.schedule_interval(defaults.default_multilayer_event_parse, 1 / conf.max_fps)
+
+    layers.init_layers()
 
     _window = _PantherApp()
 

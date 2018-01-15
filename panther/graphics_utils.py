@@ -290,7 +290,7 @@ class GraphicsManager:
         # import pprint
         # pprint.pprint(inspect.getmembers(label))#, lambda a: not (inspect.isroutine(a))))
 
-        print(label.texture)
+        #print(label.texture)
 
         rect = Rectangle(
             pos=(x, y),
@@ -298,6 +298,6 @@ class GraphicsManager:
             size=(label.texture.size[0], label.texture.size[1])
         )
 
-        print(rect)
+        #print(rect)
 
         self._draw_graphic(rect)

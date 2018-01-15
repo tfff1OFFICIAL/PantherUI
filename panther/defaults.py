@@ -1,4 +1,6 @@
 def default_event_parse(dt):
+    raise DeprecationWarning("This method is deprecated as it works with only one layer, you can ignore this warning if you're only planning on using the simple (single-layer) API")
+
     import panther
     for event in panther.events:
         if event.name == "quit":

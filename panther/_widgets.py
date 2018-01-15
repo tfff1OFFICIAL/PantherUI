@@ -98,7 +98,7 @@ class _PantherApp(BoxLayout, App):
             panther.conf.silent_setattr("width", width)
             panther.conf.silent_setattr("height", height)
 
-        panther.trigger_event('resize', width, height, apply_func)
+        panther.trigger_event('resize', width, height)#, apply_func)
 
     def on_mouse_pos(self, window, pos):
         panther.trigger_event('mousepos', pos)
