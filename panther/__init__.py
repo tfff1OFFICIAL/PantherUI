@@ -2,10 +2,12 @@
 Root of Panther module
 """
 import threading
+from collections import defaultdict
 from functools import wraps
 import queue
 from kivy.clock import Clock
 from panther import defaults
+from .graphics_utils import GraphicsManager
 
 
 class Event:
@@ -192,18 +194,27 @@ class Conf:
 
 class PantherLayerNamespace:
     def __init__(self):
-        vars = dict()
+        vars = defaultdict(lambda: None)
+
+    def __getitem__(self, item):
+        return self.vars[item]
+
+    def __setitem__(self, key, value):
+        self.vars[key] = value
 
 
 class PantherLayer:
     """
     A canvas layer in Panther with it's own events and drawing functionality
     """
-    def __init__(self):
+    def __init__(self, is_root=False):
         from panther._widgets import _CanvasWidget
+
+        self.is_root = is_root
 
         self.canvas = _CanvasWidget()
         self.events = EventManager()
+        self.graphics = GraphicsManager(self)
 
         self.clear_next_frame = True
 
@@ -212,6 +223,14 @@ class PantherLayer:
     @property
     def widget(self):
         return self.canvas
+
+    @property
+    def size(self):
+        return self.canvas.size
+
+    @property
+    def pos(self):
+        return self.canvas.pos
 
     def clear_canvas(self):
         if self.clear_next_frame:
@@ -240,11 +259,19 @@ class PantherLayer:
 
             event.auto_handle(namespace=self.namespace)
 
+    def do_draw(self):
+        if self.is_root:  # expose the super-simple API to the root layer
+            self.events.execute("draw")
+        else:
+            self.events.execute("draw", graphics=self.graphics)
+
     def start(self):
         global _window
 
         if _window is not None:
             _window.add_widget(self.canvas)
+        else:
+            raise RuntimeError("panther._window is not defined, therefore the layer cannot be started")
 
         self.events.execute("load")
 
@@ -256,15 +283,22 @@ class LayerManager:
     def add(self):
         l = PantherLayer()
         self.layers.append(l)
-        l.start()
+
+        if started:
+            l.start()
 
         return l
 
     def add_root(self):
-        l = PantherLayer()
+        l = PantherLayer(is_root=True)
         self.layers.append(l)
 
         return l
+
+    def start_layers(self):
+        # starts all of the layers after _window has been created
+        for layer in self.layers[1:]:
+            layer.start()
 
     def __getitem__(self, item):
         return self.layers[item]
@@ -287,6 +321,7 @@ app_quitting = False
 # simple (root-layer) API
 canvas = layers.add_root()
 events = canvas.events
+graphics = canvas.graphics
 
 
 conf = Conf()
@@ -297,7 +332,7 @@ def create_app():
     create the Window, and add the root canvas
     :return: None
     """
-    global canvas, _window
+    global canvas, _window, started
 
     from panther._widgets import _PantherApp
 
@@ -306,12 +341,16 @@ def create_app():
             layer.events.execute('update', dt)
             if conf.clear_every_frame:
                 layer.clear_canvas()
-            layer.events.execute('draw')
+            layer.do_draw()
 
     update_event = Clock.schedule_interval(update_event, 1 / conf.max_fps)
     event_checker = Clock.schedule_interval(defaults.default_event_parse, 1 / conf.max_fps)
 
     _window = _PantherApp()
+
+    layers.start_layers()
+
+    started = True
 
     _window.run()
 

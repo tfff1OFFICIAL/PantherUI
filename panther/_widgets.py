@@ -2,6 +2,7 @@ from kivy.core.window import Window
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.widget import Widget
+from kivy.graphics import Color
 import panther
 
 
@@ -13,6 +14,8 @@ class _CanvasWidget(Widget):
         super(self.__class__, self).__init__(**kwargs)
         self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
         self._keyboard.bind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)
+
+        self.canvas.add(Color([0, 0, 0, 0]))
 
     def _keyboard_closed(self):
         self._keyboard.unbind(on_key_down=self._on_keyboard_down, on_key_up=self._on_keyboard_up)

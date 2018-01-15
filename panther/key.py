@@ -38,3 +38,11 @@ def down(keyname):
     :return: bool
     """
     return _keys[keyname]
+
+
+def any_down():
+    """
+    Whether any keys are currently pressed
+    :return: bool
+    """
+    return True in _keys.values()
